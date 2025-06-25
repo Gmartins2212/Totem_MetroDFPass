@@ -35,7 +35,7 @@
       <h2>Metrô DF Pass</h2>
       <form onsubmit="return confirmarCompra()">
         <label for="quantidade">Quantidade de Tickets:</label>
-        <input type="number" id="quantidade" placeholder="Quantidade" min="1" required oninput="atualizarValorTotal()">
+        <input type="text" id="quantidade" placeholder="Quantidade" min="1" required oninput="atualizarValorTotal()" onfocus="mostrarTeclado(this)" readonly>
         <div id="valor-total" style="margin-bottom: 10px; font-weight: bold; color: #333;">Valor total: R$ 5,50</div>
         <button type="submit" id="btn-comprar" disabled>Confirmar</button>
       </form>
@@ -45,13 +45,31 @@
       <h2>Consulta de Tickets</h2>
       <form onsubmit="return consultarTickets()">
         <label for="cpf">CPF:</label>
-        <input type="text" id="cpf" placeholder="XXX.XXX.XXX-XX" maxlength="14" required oninput="formatarCPF(this)">
+        <input type="text" id="cpf" placeholder="XXX.XXX.XXX-XX" maxlength="14" required oninput="formatarCPF(this)" onfocus="mostrarTeclado(this)" readonly>
         <button type="submit">Consultar</button>
       </form>
       <div id="resultado-consulta" style="display: none;">
         <h3>Seus Tickets</h3>
         <ul id="lista-tickets"></ul>
       </div>
+    </div>
+  </div>
+
+  <!-- Teclado Numérico Virtual -->
+  <div id="teclado-numerico" style="display:none; position:fixed; left:50%; bottom:10px; transform:translateX(-50%); background:#fff; border-radius:18px; box-shadow:0 4px 16px rgba(0,0,0,0.18); padding:18px 18px 10px 18px; z-index:2000;">
+    <div style="display:grid; grid-template-columns:repeat(3,60px); gap:10px; justify-items:center;">
+      <button type="button" class="tecla-num" onclick="teclaNum('1')">1</button>
+      <button type="button" class="tecla-num" onclick="teclaNum('2')">2</button>
+      <button type="button" class="tecla-num" onclick="teclaNum('3')">3</button>
+      <button type="button" class="tecla-num" onclick="teclaNum('4')">4</button>
+      <button type="button" class="tecla-num" onclick="teclaNum('5')">5</button>
+      <button type="button" class="tecla-num" onclick="teclaNum('6')">6</button>
+      <button type="button" class="tecla-num" onclick="teclaNum('7')">7</button>
+      <button type="button" class="tecla-num" onclick="teclaNum('8')">8</button>
+      <button type="button" class="tecla-num" onclick="teclaNum('9')">9</button>
+      <button type="button" class="tecla-num" onclick="teclaBack()" style="font-size:18px;">⌫</button>
+      <button type="button" class="tecla-num" onclick="teclaNum('0')">0</button>
+      <button type="button" class="tecla-num" onclick="fecharTeclado()" style="font-size:18px;">Fechar</button>;
     </div>
   </div>
 
@@ -159,6 +177,56 @@
       valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2'); // Coloca hífen antes dos últimos 2 dígitos
       input.value = valor;
     }
+
+    // Teclado numérico virtual
+    let campoAtivo = null;
+    function mostrarTeclado(input) {
+      campoAtivo = input;
+      document.getElementById('teclado-numerico').style.display = 'block';
+    }
+    function teclaNum(num) {
+      if (!campoAtivo) return;
+      if (campoAtivo.id === 'cpf') {
+        // Só permite até 11 dígitos numéricos
+        let valor = campoAtivo.value.replace(/\D/g, '');
+        if (valor.length >= 11) return;
+        campoAtivo.value += num;
+        formatarCPF(campoAtivo);
+      } else if (campoAtivo.id === 'quantidade') {
+        // Só permite até 3 dígitos
+        let valor = campoAtivo.value.replace(/\D/g, '');
+        if (valor.length >= 3) return;
+        campoAtivo.value += num;
+        atualizarValorTotal();
+      }
+      campoAtivo.focus();
+    }
+    function teclaBack() {
+      if (!campoAtivo) return;
+      if (campoAtivo.id === 'cpf') {
+        let valor = campoAtivo.value.replace(/\D/g, '');
+        valor = valor.slice(0, -1);
+        campoAtivo.value = valor;
+        formatarCPF(campoAtivo);
+      } else if (campoAtivo.id === 'quantidade') {
+        let valor = campoAtivo.value.replace(/\D/g, '');
+        valor = valor.slice(0, -1);
+        campoAtivo.value = valor;
+        atualizarValorTotal();
+      }
+      campoAtivo.focus();
+    }
+    function fecharTeclado() {
+      document.getElementById('teclado-numerico').style.display = 'none';
+      campoAtivo = null;
+    }
+    // Fecha teclado ao clicar fora
+    document.addEventListener('mousedown', function(e) {
+      const teclado = document.getElementById('teclado-numerico');
+      if (teclado.style.display === 'block' && !teclado.contains(e.target) && campoAtivo && e.target !== campoAtivo) {
+        fecharTeclado();
+      }
+    });
 
     // Inicializa valor total e estado do botão ao carregar a página
     window.onload = function() {
